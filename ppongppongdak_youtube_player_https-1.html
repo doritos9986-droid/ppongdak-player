@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="theme-color" content="#111111">
+<title>퐁퐁닭 유튜브 플레이어</title>
+<style>
+:root{color-scheme:dark;--bg:#111;--panel:#202020;--muted:#aaa;--red:#ff0033}
+*{box-sizing:border-box}
+body{margin:0;padding:18px 14px 32px;background:var(--bg);color:#fff;font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif}
+main{max-width:760px;margin:auto}
+header{display:flex;align-items:center;gap:10px;margin:4px 0 8px}
+.logo{width:42px;height:30px;border-radius:9px;background:var(--red);display:grid;place-items:center;font-size:19px}
+h1{font-size:21px;margin:0}.sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+.player{aspect-ratio:16/9;background:#000;border-radius:14px;overflow:hidden;display:grid;place-items:center}
+iframe{width:100%;height:100%;border:0}
+.placeholder{text-align:center;color:#aaa;padding:20px;line-height:1.6}
+.placeholder b{display:block;color:white;margin-bottom:6px}
+.panel{background:var(--panel);padding:16px;border-radius:14px;margin-top:14px}
+label{display:block;font-size:14px;font-weight:700;margin-bottom:8px}
+.field{display:flex;gap:8px}
+input{flex:1;min-width:0;background:#111;color:white;border:1px solid #444;border-radius:10px;padding:13px;font-size:15px}
+button{border:0;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer}
+.primary{background:var(--red);color:white}
+.secondary{background:#383838;color:white;width:100%;margin-top:9px}
+.hint{color:var(--muted);font-size:12px;line-height:1.65;margin:10px 0 0}
+.status{font-size:12px;color:#ffc0cb;min-height:18px;margin-top:8px}
+@media(max-width:430px){.field{flex-direction:column}.primary{width:100%}h1{font-size:19px}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="logo">▶</div><h1>퐁퐁닭 유튜브 플레이어</h1></header>
+<p class="sub">유튜브 영상 주소나 영상 ID를 넣으면 아래 화면에서 재생해요.</p>
+<section class="player" id="player"><div class="placeholder"><b>영상이 여기에 표시돼요</b>아래에 유튜브 영상 주소를 넣어 주세요.</div></section>
+<section class="panel">
+<label for="videoInput">유튜브 영상 주소 또는 영상 ID</label>
+<div class="field">
+<input id="videoInput" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off" inputmode="url">
+<button class="primary" id="playButton">재생하기</button>
+</div>
+<button class="secondary" id="searchButton">퐁퐁닭 영상 검색하기</button>
+<p class="hint">오류 153을 피하려면 이 파일을 휴대폰에 저장해 직접 여는 대신, HTTPS 웹사이트에 게시한 주소로 접속해야 해요. 영상 자체가 외부 재생을 막았으면 유튜브에서 열어야 해요.</p>
+<div class="status" id="status" aria-live="polite"></div>
+</section>
+</main>
+<script>
+const input=document.getElementById('videoInput');
+const player=document.getElementById('player');
+const status=document.getElementById('status');
+
+function getVideoId(value){
+ const raw=value.trim();
+ if(/^[a-zA-Z0-9_-]{11}$/.test(raw))return raw;
+ try{
+  const u=new URL(raw);let id='';
+  if(u.hostname==='youtu.be'||u.hostname.endsWith('.youtu.be'))id=u.pathname.split('/').filter(Boolean)[0]||'';
+  else if(u.hostname.includes('youtube.com')){
+   id=u.searchParams.get('v')||'';
+   if(!id){const p=u.pathname.split('/').filter(Boolean);const i=p.findIndex(x=>['embed','shorts','live'].includes(x));if(i>=0)id=p[i+1]||'';}
+  }
+  return /^[a-zA-Z0-9_-]{11}$/.test(id)?id:'';
+ }catch(e){return '';}
+}
+function play(){
+ const id=getVideoId(input.value);
+ if(!id){status.textContent='유효한 유튜브 영상 주소 또는 11자리 영상 ID를 입력해 주세요.';return;}
+ status.textContent='';
+ const frame=document.createElement('iframe');
+ const origin=location.origin && location.origin!=='null' ? '&origin='+encodeURIComponent(location.origin) : '';
+ frame.src='https://www.youtube.com/embed/'+encodeURIComponent(id)+'?autoplay=1&rel=0&playsinline=1&enablejsapi=1'+origin;
+ frame.title='YouTube video player';
+ frame.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+ frame.allowFullscreen=true;
+ frame.referrerPolicy='strict-origin-when-cross-origin';
+ player.replaceChildren(frame);
+}
+document.getElementById('playButton').addEventListener('click',play);
+input.addEventListener('keydown',e=>{if(e.key==='Enter')play();});
+document.getElementById('searchButton').addEventListener('click',()=>window.open('https://www.youtube.com/results?search_query='+encodeURIComponent('퐁퐁닭'),'_blank','noopener'));
+</script>
+</body>
+</html>
